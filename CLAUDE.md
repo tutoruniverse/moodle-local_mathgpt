@@ -8,20 +8,20 @@ This is `local_mathgpt`, a Moodle local plugin that exposes a REST API for the M
 
 - **Component name**: `local_mathgpt`
 - **Requires**: Moodle 4.3+ (2023100900)
-- **Moodle installation**: `/Users/hoaha/apps/moodle/moodle/` (read-only reference — do not modify)
-- **Plugin lives at**: `/Users/hoaha/apps/moodle-plugin/` (symlinked or copied to `moodle/local/mathgpt/`)
+- **Moodle installation**: `{moodle_root}` (read-only reference — do not modify)
+- **Plugin lives at**: `{moodle_root}/local/mathgpt/` (symlinked or copied)
 
 ## Development Setup
 
 To test changes, the plugin directory must be present at `{moodle_root}/local/mathgpt/`. After adding/changing files, trigger Moodle's upgrade process:
 
 ```bash
-php /Users/hoaha/apps/moodle/moodle/admin/cli/upgrade.php --non-interactive
+php {moodle_root}/admin/cli/upgrade.php --non-interactive
 ```
 
 Run PHPUnit tests (once a `tests/` directory exists):
 ```bash
-cd /Users/hoaha/apps/moodle/moodle
+cd {moodle_root}
 php admin/tool/phpunit/cli/init.php
 vendor/bin/phpunit --filter local_mathgpt
 ```
@@ -61,7 +61,7 @@ POST /local/mathgpt/api.php
 
 ### LTI Manager (`classes/lti_manager.php`)
 
-Wraps Moodle's `mod_lti` internals. The `ltitoolid` setting (configured in plugin admin) must point to a valid LTI 1.3 external tool. The `module_item_id` custom parameter links LTI activities back to MathGPT's internal item IDs.
+Wraps Moodle's `mod_lti` internals. The `ltitoolid` setting (configured in plugin admin) must point to a valid LTI 1.3 external tool. Arbitrary custom parameters can be passed via `custom_params` at create/update time.
 
 ### Key Moodle APIs Used
 
