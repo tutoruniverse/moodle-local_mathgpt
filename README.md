@@ -1,6 +1,6 @@
-# MathGPT API — Moodle Local Plugin
+# local_mathgpt — Moodle LTI API Plugin
 
-A Moodle local plugin that exposes a REST API for the [MathGPT](https://mathgpt.com) application to programmatically manage Moodle course content: courses, sections, and LTI 1.3 activities.
+A Moodle local plugin that exposes a REST API for programmatically managing Moodle course content: courses, sections, and LTI 1.3 activities. Designed to be service-agnostic — any backend can use it by passing arbitrary LTI custom parameters.
 
 ## Requirements
 
@@ -54,21 +54,125 @@ Error response:
 
 ### Functions
 
-| Function | Required params | Optional params | Returns |
-|---|---|---|---|
-| `get_courses` | — | — | `[{id, fullname, shortname, visible}]` |
-| `get_course_contents` | `courseid` | — | `[{id, name, modules:[{id, modname, name, visible}]}]` |
-| `create_lti_activity` | `courseid`, `sectionnum`, `name`, `module_item_id`, `educator_uid` | — | `{cmid, coursemodule_url}` |
-| `update_lti_activity` | `cmid` | `name`, `module_item_id`, `visible` | `{cmid}` |
-| `delete_lti_activity` | `cmid` | — | `{success: true}` |
-| `create_section` | `courseid` | `name`, `position` | `{id, section, name}` |
-| `update_section` | `sectionid` | `name`, `visible`, `summary` | `{id, section, name, visible}` |
-| `delete_section` | `sectionid` | `force` | `{success: true}` |
+---
 
-**Notes:**
-- `module_item_id` — MathGPT content UUID stored as an LTI custom parameter
-- `educator_uid` — MathGPT user identifier stored as an LTI custom parameter
-- `delete_section` with non-empty sections requires `force: true`
+#### `get_courses`
+
+Returns all courses except the site home.
+
+_No params._
+
+**Returns:** array of `{ id: int, fullname: string, shortname: string, visible: 0|1 }`
+
+---
+
+#### `get_course_contents`
+
+Returns all sections and their modules for a course.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `courseid` | int | yes | Moodle course ID |
+
+**Returns:** array of `{ id: int, name: string, modules: [{ id: int, modname: string, name: string, visible: 0|1 }] }`
+
+---
+
+#### `create_lti_activity`
+
+Creates an LTI 1.3 activity inside a course section.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `courseid` | int | yes | Target course ID |
+| `sectionnum` | int | yes | Section number within the course (0 = top/general section) |
+| `name` | string | yes | Display name shown in the course |
+| `custom_params` | object | no | Arbitrary key/value pairs forwarded to the LTI tool as custom parameters (e.g. `{"module_item_id": "abc", "educator_uid": "user@example.com"}`) |
+
+**Returns:** `{ cmid: int, coursemodule_url: string }`
+
+```json
+{
+  "function": "create_lti_activity",
+  "params": {
+    "courseid": 5,
+    "sectionnum": 1,
+    "name": "Week 1 Assignment",
+    "custom_params": { "module_item_id": "abc123", "educator_uid": "teacher@example.com" }
+  }
+}
+```
+
+---
+
+#### `update_lti_activity`
+
+Updates an existing LTI activity. Only supplied fields are changed.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `cmid` | int | yes | Course module ID of the activity |
+| `name` | string | no | New display name |
+| `visible` | 0\|1 | no | Show or hide the activity |
+| `custom_params` | object | no | Fully replaces all existing LTI custom parameters. Omit to leave them unchanged. |
+
+**Returns:** `{ cmid: int }`
+
+---
+
+#### `delete_lti_activity`
+
+Permanently removes an LTI activity.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `cmid` | int | yes | Course module ID of the activity |
+
+**Returns:** `{ success: true }`
+
+---
+
+#### `create_section`
+
+Adds a new section to a course.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `courseid` | int | yes | Target course ID |
+| `name` | string | no | Section name (if omitted Moodle uses its default naming, e.g. "Topic N") |
+| `position` | int | no | Insert position (0 = after the last section, default) |
+
+**Returns:** `{ id: int, section: int, name: string }`
+
+---
+
+#### `update_section`
+
+Updates metadata on an existing section.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `sectionid` | int | yes | Section record ID (not the section number) |
+| `name` | string | no | New section name |
+| `visible` | 0\|1 | no | Show or hide the section |
+| `summary` | string | no | Section summary HTML |
+
+At least one of `name`, `visible`, or `summary` must be provided.
+
+**Returns:** `{ id: int, section: int, name: string, visible: 0|1 }`
+
+---
+
+#### `delete_section`
+
+Removes a section. Fails if the section contains modules unless `force` is set.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `sectionid` | int | yes | Section record ID |
+| `force` | bool | no | Pass `true` to delete even if the section contains activities (default `false`) |
+
+**Returns:** `{ success: true }`
 
 ## Running Tests
 

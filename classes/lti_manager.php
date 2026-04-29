@@ -31,16 +31,41 @@ require_once($CFG->dirroot . '/course/lib.php');
 class lti_manager {
 
     /**
+     * Encode an associative array as LTI custom parameter string (key=value, one per line).
+     */
+    private function encode_custom_params(array $params): string {
+        $lines = [];
+        foreach ($params as $k => $v) {
+            $lines[] = $k . '=' . $v;
+        }
+        return implode("\n", $lines);
+    }
+
+    /**
+     * Decode an LTI custom parameter string into an associative array.
+     */
+    private function decode_custom_params(string $raw): array {
+        $result = [];
+        foreach (explode("\n", $raw) as $line) {
+            [$k, $v] = array_pad(explode('=', $line, 2), 2, '');
+            if ($k !== '') {
+                $result[trim($k)] = trim($v);
+            }
+        }
+        return $result;
+    }
+
+    /**
      * Create a new mod_lti activity in the given course section.
      *
-     * @param int    $courseid   Target course ID
-     * @param int    $sectionnum Section number (0 = top)
-     * @param string $name       Display name shown in the course
-     * @param string $module_item_id MathGPT content UUID stored as LTI custom param
+     * @param int    $courseid     Target course ID
+     * @param int    $sectionnum   Section number (0 = top)
+     * @param string $name         Display name shown in the course
+     * @param array  $custom_params Optional key→value pairs sent as LTI custom parameters
      * @return array { cmid: int, coursemodule_url: string }
      * @throws \moodle_exception if LTI tool ID is not configured in plugin settings
      */
-    public function create(int $courseid, int $sectionnum, string $name, string $module_item_id, string $educator_uid): array {
+    public function create(int $courseid, int $sectionnum, string $name, array $custom_params = []): array {
         $toolid = (int) get_config('local_mathgpt', 'ltitoolid');
         if (!$toolid) {
             throw new \moodle_exception('notoolid', 'local_mathgpt');
@@ -54,7 +79,7 @@ class lti_manager {
         $moduleinfo->section                    = $sectionnum;
         $moduleinfo->typeid                     = $toolid;
         $moduleinfo->name                       = $name;
-        $moduleinfo->instructorcustomparameters = 'module_item_id=' . $module_item_id . "\neducator_uid=" . $educator_uid;
+        $moduleinfo->instructorcustomparameters = $this->encode_custom_params($custom_params);
         $moduleinfo->visible                    = 1;
         $moduleinfo->introeditor                = ['text' => '', 'format' => FORMAT_HTML, 'itemid' => 0];
         $moduleinfo->grade                      = 0;
@@ -85,7 +110,8 @@ class lti_manager {
      * Update an existing LTI activity. Only keys present in $updates are changed.
      *
      * @param int   $cmid    Course module ID of the LTI activity
-     * @param array $updates Keys: name (string), module_item_id (string), visible (bool/int)
+     * @param array $updates Keys: name (string), visible (bool/int), custom_params (array)
+     *                       When custom_params is provided it fully replaces existing custom params.
      * @return array { cmid: int }
      * @throws \dml_missing_record_exception if cmid does not exist
      */
@@ -107,23 +133,9 @@ class lti_manager {
         $moduleinfo->visible                    = isset($updates['visible'])
             ? (int) $updates['visible']
             : (int) $cm->visible;
-        if (isset($updates['module_item_id'])) {
-            // Rebuild params, preserving educator_uid from the existing record.
-            $existing = [];
-            foreach (explode("\n", $lti->instructorcustomparameters ?? '') as $line) {
-                [$k, $v] = array_pad(explode('=', $line, 2), 2, '');
-                if ($k !== '') {
-                    $existing[trim($k)] = trim($v);
-                }
-            }
-            $new_params = 'module_item_id=' . $updates['module_item_id'];
-            if (!empty($existing['educator_uid'])) {
-                $new_params .= "\neducator_uid=" . $existing['educator_uid'];
-            }
-            $moduleinfo->instructorcustomparameters = $new_params;
-        } else {
-            $moduleinfo->instructorcustomparameters = $lti->instructorcustomparameters ?? '';
-        }
+        $moduleinfo->instructorcustomparameters = isset($updates['custom_params'])
+            ? $this->encode_custom_params($updates['custom_params'])
+            : ($lti->instructorcustomparameters ?? '');
         $moduleinfo->introeditor                = ['text' => $lti->intro ?? '', 'format' => (int) ($lti->introformat ?? FORMAT_HTML), 'itemid' => 0];
         $moduleinfo->grade                      = $lti->grade      ?? 0;
         $moduleinfo->cmidnumber                 = $cm->idnumber    ?? '';

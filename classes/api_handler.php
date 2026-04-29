@@ -100,17 +100,19 @@ class api_handler {
     }
 
     private function create_lti_activity(array $params): array {
-        foreach (['courseid', 'sectionnum', 'name', 'module_item_id', 'educator_uid'] as $field) {
+        foreach (['courseid', 'sectionnum', 'name'] as $field) {
             if (!isset($params[$field]) || $params[$field] === '') {
                 throw new \invalid_parameter_exception("Missing required param: {$field}");
             }
         }
+        $custom_params = isset($params['custom_params']) && is_array($params['custom_params'])
+            ? $params['custom_params']
+            : [];
         return (new lti_manager())->create(
             (int)    $params['courseid'],
             (int)    $params['sectionnum'],
             (string) $params['name'],
-            (string) $params['module_item_id'],
-            (string) $params['educator_uid']
+            $custom_params
         );
     }
 
@@ -118,7 +120,10 @@ class api_handler {
         if (empty($params['cmid'])) {
             throw new \invalid_parameter_exception('Missing required param: cmid');
         }
-        $updates = array_intersect_key($params, array_flip(['name', 'module_item_id', 'visible']));
+        $updates = array_intersect_key($params, array_flip(['name', 'visible']));
+        if (isset($params['custom_params']) && is_array($params['custom_params'])) {
+            $updates['custom_params'] = $params['custom_params'];
+        }
         return (new lti_manager())->update((int) $params['cmid'], $updates);
     }
 
