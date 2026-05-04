@@ -39,7 +39,7 @@ $token = auth::extract_bearer_token($authheader);
 
 if ($token === null) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Missing or malformed Authorization header']);
+    echo json_encode(['success' => false, 'error' => get_string('missingauthheader', 'local_mathgpt')]);
     exit;
 }
 
@@ -48,7 +48,7 @@ try {
     $userid = auth::validate_bearer_token($token);
 } catch (\moodle_exception $e) {
     http_response_code(401);
-    echo json_encode(['success' => false, 'error' => 'Invalid or expired token']);
+    echo json_encode(['success' => false, 'error' => get_string('invalidapitoken', 'local_mathgpt')]);
     exit;
 }
 
@@ -59,7 +59,7 @@ $PAGE->set_context(\context_system::instance());
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body) || !isset($body['function'])) {
     http_response_code(400);
-    echo json_encode(['success' => false, 'error' => 'Request body must be JSON with a "function" key']);
+    echo json_encode(['success' => false, 'error' => get_string('invalidrequestbody', 'local_mathgpt')]);
     exit;
 }
 
@@ -77,11 +77,11 @@ try {
 
 } catch (\dml_missing_record_exception $e) {
     http_response_code(404);
-    echo json_encode(['success' => false, 'error' => 'Resource not found']);
+    echo json_encode(['success' => false, 'error' => get_string('resourcenotfound', 'local_mathgpt')]);
 
 } catch (\required_capability_exception $e) {
     http_response_code(403);
-    echo json_encode(['success' => false, 'error' => 'Insufficient capabilities']);
+    echo json_encode(['success' => false, 'error' => get_string('insufficientcapabilities', 'local_mathgpt')]);
 
 } catch (\moodle_exception $e) {
     http_response_code(500);

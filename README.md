@@ -10,7 +10,7 @@ A Moodle local plugin that exposes a REST API for programmatically managing Mood
 
 ## Installation
 
-1. Download the plugin ZIP from the Moodle Plugin Directory or from the [GitHub releases](../../releases) page.
+1. Download the plugin ZIP from the Moodle Plugin Directory or from the [GitHub releases](https://github.com/tutoruniverse/moodle-local_mathgpt/releases) page.
 2. In Moodle, go to **Site Administration → Plugins → Install plugins** and upload the ZIP.
 3. Follow the on-screen upgrade steps.
 
@@ -32,7 +32,7 @@ Every API request must include a Bearer token in the `Authorization` header:
 Authorization: Bearer <token>
 ```
 
-Tokens are issued by the `local_oauth2` plugin. The token owner becomes the active Moodle user for the request, so that user must have the appropriate course/module editing capabilities.
+Tokens are issued by the `local_oauth2` plugin. The token owner becomes the active Moodle user for the request and must have the `local/mathgpt:useapi` capability (granted to the Manager role by default).
 
 ## API Reference
 
@@ -182,6 +182,10 @@ php admin/tool/phpunit/cli/init.php
 vendor/bin/phpunit --filter local_mathgpt
 ```
 
+## Reporting Bugs
+
+Use the [GitHub issue tracker](https://github.com/tutoruniverse/moodle-local_mathgpt/issues) to report bugs or request features.
+
 ## License
 
-GNU General Public License v3 or later — see [COPYING](https://www.gnu.org/licenses/gpl-3.0.html).
+GNU General Public License v3 or later — see [LICENSE](LICENSE) or <https://www.gnu.org/licenses/gpl-3.0.html>.

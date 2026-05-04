@@ -31,3 +31,13 @@ $string['notoolid']       = 'LTI tool ID is not configured. Set it in Site admin
 $string['invalidtoken']   = 'Invalid access token.';
 $string['tokenexpired']   = 'Access token has expired.';
 $string['privacy:metadata'] = 'The MathGPT API plugin does not store any personal data. It acts as a REST bridge that orchestrates Moodle-internal APIs; any personal data (including LTI custom parameters) is stored and managed by mod_lti.';
+
+// Capability.
+$string['mathgpt:useapi'] = 'Use MathGPT API';
+
+// API error responses.
+$string['missingauthheader']       = 'Missing or malformed Authorization header.';
+$string['invalidapitoken']         = 'Invalid or expired token.';
+$string['invalidrequestbody']      = 'Request body must be JSON with a "function" key.';
+$string['resourcenotfound']        = 'Resource not found.';
+$string['insufficientcapabilities'] = 'Insufficient capabilities.';

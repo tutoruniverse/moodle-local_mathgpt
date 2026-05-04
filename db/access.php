@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Tests for local_mathgpt\lti_manager.
+ * Capability definitions for local_mathgpt.
  *
  * @package   local_mathgpt
  * @copyright 2026 MathGPT <backend@gotitapp.co>
@@ -24,21 +24,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use local_mathgpt\lti_manager;
-
-/**
- * Test class for local_mathgpt\lti_manager.
- *
- * @package   local_mathgpt
- */
-class local_mathgpt_lti_manager_test extends advanced_testcase {
-
-    public function test_create_throws_when_ltitoolid_not_configured(): void {
-        $this->resetAfterTest();
-        // Explicitly unset the config to ensure it is not configured.
-        unset_config('ltitoolid', 'local_mathgpt');
-
-        $this->expectException(\moodle_exception::class);
-        (new lti_manager())->create(1, 0, 'Test Activity');
-    }
-}
+$capabilities = [
+    'local/mathgpt:useapi' => [
+        'captype'      => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes'   => [
+            'manager' => CAP_ALLOW,
+        ],
+    ],
+];

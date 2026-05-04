@@ -32,6 +32,8 @@ require_once($CFG->dirroot . '/local/mathgpt/classes/lti_manager.php');
 class api_handler {
 
     public function dispatch(string $function, array $params): array {
+        require_capability('local/mathgpt:useapi', \context_system::instance());
+
         switch ($function) {
             case 'get_courses':
                 return $this->get_courses();
