@@ -57,12 +57,10 @@ class api_handler {
     }
 
     private function get_courses(): array {
-        $courses = get_courses('all', 'c.fullname ASC', 'c.id,c.fullname,c.shortname,c.visible');
+        global $USER;
+        $courses = enrol_get_users_courses($USER->id, false, 'id,fullname,shortname,visible', 'fullname ASC');
         $result  = [];
         foreach ($courses as $course) {
-            if ((int)$course->id === SITEID) {
-                continue;
-            }
             $result[] = [
                 'id'        => (int)$course->id,
                 'fullname'  => $course->fullname,
