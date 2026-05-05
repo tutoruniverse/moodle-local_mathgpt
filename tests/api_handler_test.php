@@ -22,17 +22,16 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-use local_mathgpt\api_handler;
+namespace local_mathgpt;
 
 /**
  * Test class for local_mathgpt\api_handler dispatch guard clauses.
  *
  * @package   local_mathgpt
+ * @covers    \local_mathgpt\api_handler
  */
-class local_mathgpt_api_handler_test extends advanced_testcase {
-
+final class api_handler_test extends \advanced_testcase {
+    /** @var api_handler The handler instance under test. */
     private api_handler $handler;
 
     protected function setUp(): void {

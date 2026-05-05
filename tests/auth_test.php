@@ -22,19 +22,15 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-use local_mathgpt\auth;
+namespace local_mathgpt;
 
 /**
  * Test class for local_mathgpt\auth.
  *
  * @package   local_mathgpt
+ * @covers    \local_mathgpt\auth
  */
-class local_mathgpt_auth_test extends advanced_testcase {
-
-    // --- extract_bearer_token ---
-
+final class auth_test extends \advanced_testcase {
     public function test_extract_bearer_token_valid(): void {
         $this->assertEquals('abc123', auth::extract_bearer_token('Bearer abc123'));
     }
@@ -55,8 +51,9 @@ class local_mathgpt_auth_test extends advanced_testcase {
         $this->assertNull(auth::extract_bearer_token('Bearer'));
     }
 
-    // --- validate_bearer_token ---
-
+    /**
+     * Skip the current test if the local_oauth2_access_token table does not exist.
+     */
     private function skip_if_no_oauth2_table(): void {
         global $DB;
         if (!$DB->get_manager()->table_exists('local_oauth2_access_token')) {

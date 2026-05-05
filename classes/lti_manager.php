@@ -24,14 +24,25 @@
 
 namespace local_mathgpt;
 
+defined('MOODLE_INTERNAL') || die();
+
 global $CFG;
 require_once($CFG->dirroot . '/course/modlib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 
+/**
+ * Manages LTI 1.3 activity creation, update, and deletion for local_mathgpt.
+ *
+ * @package   local_mathgpt
+ * @copyright 2026 MathGPT <backend@gotitapp.co>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class lti_manager {
-
     /**
      * Encode an associative array as LTI custom parameter string (key=value, one per line).
+     *
+     * @param array $params Key-value pairs to encode.
+     * @return string Encoded custom parameter string.
      */
     private function encode_custom_params(array $params): string {
         $lines = [];
@@ -43,6 +54,9 @@ class lti_manager {
 
     /**
      * Decode an LTI custom parameter string into an associative array.
+     *
+     * @param string $raw Raw custom parameter string (key=value lines).
+     * @return array Decoded key-value pairs.
      */
     private function decode_custom_params(string $raw): array {
         $result = [];
@@ -58,20 +72,20 @@ class lti_manager {
     /**
      * Create a new mod_lti activity in the given course section.
      *
-     * @param int    $courseid     Target course ID
-     * @param int    $sectionnum   Section number (0 = top)
-     * @param string $name         Display name shown in the course
-     * @param array  $custom_params Optional key→value pairs sent as LTI custom parameters
+     * @param int    $courseid     Target course ID.
+     * @param int    $sectionnum   Section number (0 = top).
+     * @param string $name         Display name shown in the course.
+     * @param array  $customparams Optional key-value pairs sent as LTI custom parameters.
      * @return array { cmid: int, coursemodule_url: string }
-     * @throws \moodle_exception if LTI tool ID is not configured in plugin settings
+     * @throws \moodle_exception If LTI tool ID is not configured in plugin settings.
      */
-    public function create(int $courseid, int $sectionnum, string $name, array $custom_params = []): array {
+    public function create(int $courseid, int $sectionnum, string $name, array $customparams = []): array {
         $toolid = (int) get_config('local_mathgpt', 'ltitoolid');
         if (!$toolid) {
             throw new \moodle_exception('notoolid', 'local_mathgpt');
         }
 
-        get_course($courseid); // throws dml_missing_record_exception if not found
+        get_course($courseid); // Throws dml_missing_record_exception if not found.
 
         $moduleinfo                             = new \stdClass();
         $moduleinfo->modulename                 = 'lti';
@@ -79,7 +93,7 @@ class lti_manager {
         $moduleinfo->section                    = $sectionnum;
         $moduleinfo->typeid                     = $toolid;
         $moduleinfo->name                       = $name;
-        $moduleinfo->instructorcustomparameters = $this->encode_custom_params($custom_params);
+        $moduleinfo->instructorcustomparameters = $this->encode_custom_params($customparams);
         $moduleinfo->visible                    = 1;
         $moduleinfo->introeditor                = ['text' => '', 'format' => FORMAT_HTML, 'itemid' => 0];
         $moduleinfo->grade                      = 0;
@@ -98,7 +112,7 @@ class lti_manager {
     /**
      * Delete a course module by cmid.
      *
-     * @param int $cmid Course module ID to delete
+     * @param int $cmid Course module ID to delete.
      * @return array { success: true }
      */
     public function delete(int $cmid): array {
@@ -109,11 +123,11 @@ class lti_manager {
     /**
      * Update an existing LTI activity. Only keys present in $updates are changed.
      *
-     * @param int   $cmid    Course module ID of the LTI activity
-     * @param array $updates Keys: name (string), visible (bool/int), custom_params (array)
+     * @param int   $cmid    Course module ID of the LTI activity.
+     * @param array $updates Keys: name (string), visible (bool/int), custom_params (array).
      *                       When custom_params is provided it fully replaces existing custom params.
      * @return array { cmid: int }
-     * @throws \dml_missing_record_exception if cmid does not exist
+     * @throws \dml_missing_record_exception If cmid does not exist.
      */
     public function update(int $cmid, array $updates): array {
         global $DB;
@@ -129,16 +143,20 @@ class lti_manager {
         $moduleinfo->instance                   = (int) $cm->instance;
         $moduleinfo->section                    = (int) $cm->sectionnum;
         $moduleinfo->typeid                     = (int) $lti->typeid;
-        $moduleinfo->name                       = $updates['name']    ?? $lti->name;
+        $moduleinfo->name                       = $updates['name'] ?? $lti->name;
         $moduleinfo->visible                    = isset($updates['visible'])
             ? (int) $updates['visible']
             : (int) $cm->visible;
         $moduleinfo->instructorcustomparameters = isset($updates['custom_params'])
             ? $this->encode_custom_params($updates['custom_params'])
             : ($lti->instructorcustomparameters ?? '');
-        $moduleinfo->introeditor                = ['text' => $lti->intro ?? '', 'format' => (int) ($lti->introformat ?? FORMAT_HTML), 'itemid' => 0];
-        $moduleinfo->grade                      = $lti->grade      ?? 0;
-        $moduleinfo->cmidnumber                 = $cm->idnumber    ?? '';
+        $moduleinfo->introeditor                = [
+            'text'   => $lti->intro ?? '',
+            'format' => (int) ($lti->introformat ?? FORMAT_HTML),
+            'itemid' => 0,
+        ];
+        $moduleinfo->grade                      = $lti->grade ?? 0;
+        $moduleinfo->cmidnumber                 = $cm->idnumber ?? '';
 
         update_module($moduleinfo);
 

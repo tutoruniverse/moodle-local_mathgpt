@@ -24,11 +24,22 @@
 
 namespace local_mathgpt;
 
-class auth {
+defined('MOODLE_INTERNAL') || die();
 
+/**
+ * Bearer token authentication helpers for local_mathgpt.
+ *
+ * @package   local_mathgpt
+ * @copyright 2026 MathGPT <backend@gotitapp.co>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class auth {
     /**
      * Extract the raw token string from an Authorization header value.
      * Returns null if header is absent, uses a different scheme, or has no token.
+     *
+     * @param string $header The value of the Authorization header.
+     * @return string|null The raw token, or null if not a valid Bearer header.
      */
     public static function extract_bearer_token(string $header): ?string {
         if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
@@ -44,7 +55,9 @@ class auth {
      * Table: local_oauth2_access_token
      * Columns: access_token, user_id, expires (Unix timestamp)
      *
-     * @throws \moodle_exception on missing or expired token
+     * @param string $token The raw Bearer token to validate.
+     * @return int The Moodle user ID associated with the token.
+     * @throws \moodle_exception On missing or expired token.
      */
     public static function validate_bearer_token(string $token): int {
         global $DB;

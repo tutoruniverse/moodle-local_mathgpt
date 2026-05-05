@@ -22,15 +22,15 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace local_mathgpt;
 
 /**
  * Privacy provider tests for local_mathgpt.
  *
  * @package   local_mathgpt
+ * @covers    \local_mathgpt\privacy\provider
  */
-class local_mathgpt_privacy_provider_test extends advanced_testcase {
-
+final class privacy_provider_test extends \advanced_testcase {
     public function test_provider_implements_null_provider(): void {
         $this->assertTrue(
             is_a(\local_mathgpt\privacy\provider::class, \core_privacy\local\metadata\null_provider::class, true),

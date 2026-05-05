@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_mathgpt';
 $plugin->version   = 2026041400;
-$plugin->requires  = 2023100900; // Moodle 4.3
+$plugin->requires  = 2023100900; // Moodle 4.3.
 $plugin->maturity  = MATURITY_STABLE;
 $plugin->release      = '1.0.0';
 $plugin->dependencies = ['local_oauth2' => ANY_VERSION];

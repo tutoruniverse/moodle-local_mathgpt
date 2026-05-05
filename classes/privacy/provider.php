@@ -33,7 +33,11 @@ use core_privacy\local\metadata\null_provider;
  * @category  privacy
  */
 class provider implements null_provider {
-
+    /**
+     * Return the language string identifier describing why no data is stored.
+     *
+     * @return string Language string identifier.
+     */
     public static function get_reason(): string {
         return 'privacy:metadata';
     }

@@ -70,19 +70,15 @@ $params   = is_array($body['params'] ?? null) ? $body['params'] : [];
 try {
     $data = (new api_handler())->dispatch($function, $params);
     echo json_encode(['success' => true, 'data' => $data]);
-
 } catch (\invalid_parameter_exception $e) {
     http_response_code(400);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);
-
 } catch (\dml_missing_record_exception $e) {
     http_response_code(404);
     echo json_encode(['success' => false, 'error' => get_string('resourcenotfound', 'local_mathgpt')]);
-
 } catch (\required_capability_exception $e) {
     http_response_code(403);
     echo json_encode(['success' => false, 'error' => get_string('insufficientcapabilities', 'local_mathgpt')]);
-
 } catch (\moodle_exception $e) {
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => $e->getMessage()]);

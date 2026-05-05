@@ -22,17 +22,15 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-use local_mathgpt\lti_manager;
+namespace local_mathgpt;
 
 /**
  * Test class for local_mathgpt\lti_manager.
  *
  * @package   local_mathgpt
+ * @covers    \local_mathgpt\lti_manager
  */
-class local_mathgpt_lti_manager_test extends advanced_testcase {
-
+final class lti_manager_test extends \advanced_testcase {
     public function test_create_throws_when_ltitoolid_not_configured(): void {
         $this->resetAfterTest();
         // Explicitly unset the config to ensure it is not configured.

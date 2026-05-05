@@ -24,13 +24,29 @@
 
 namespace local_mathgpt;
 
+defined('MOODLE_INTERNAL') || die();
+
 global $CFG;
 require_once($CFG->dirroot . '/course/modlib.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/local/mathgpt/classes/lti_manager.php');
 
+/**
+ * Dispatches API requests for the local_mathgpt plugin.
+ *
+ * @package   local_mathgpt
+ * @copyright 2026 MathGPT <backend@gotitapp.co>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class api_handler {
-
+    /**
+     * Route an API function call to its handler.
+     *
+     * @param string $function Name of the API function to call.
+     * @param array  $params   Request parameters.
+     * @return array Handler result.
+     * @throws \invalid_parameter_exception For unknown function names.
+     */
     public function dispatch(string $function, array $params): array {
         require_capability('local/mathgpt:useapi', \context_system::instance());
 
@@ -56,6 +72,11 @@ class api_handler {
         }
     }
 
+    /**
+     * List all courses the current user is enrolled in.
+     *
+     * @return array Course records with id, fullname, shortname, visible.
+     */
     private function get_courses(): array {
         global $USER;
         $courses = enrol_get_users_courses($USER->id, false, 'id,fullname,shortname,visible', 'fullname ASC');
@@ -71,11 +92,18 @@ class api_handler {
         return $result;
     }
 
+    /**
+     * Return sections and modules for a course.
+     *
+     * @param array $params Must contain 'courseid'.
+     * @return array Sections, each with a nested modules array.
+     * @throws \invalid_parameter_exception If courseid is missing.
+     */
     private function get_course_contents(array $params): array {
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
         }
-        $course  = get_course((int)$params['courseid']); // throws dml_missing_record_exception if absent
+        $course  = get_course((int)$params['courseid']); // Throws dml_missing_record_exception if absent.
         $modinfo = get_fast_modinfo($course);
         $result  = [];
 
@@ -99,23 +127,37 @@ class api_handler {
         return $result;
     }
 
+    /**
+     * Create an LTI 1.3 activity in a course section.
+     *
+     * @param array $params Must contain 'courseid', 'sectionnum', 'name'. Optional: 'custom_params'.
+     * @return array Created activity data.
+     * @throws \invalid_parameter_exception If a required param is missing.
+     */
     private function create_lti_activity(array $params): array {
         foreach (['courseid', 'sectionnum', 'name'] as $field) {
             if (!isset($params[$field]) || $params[$field] === '') {
                 throw new \invalid_parameter_exception("Missing required param: {$field}");
             }
         }
-        $custom_params = isset($params['custom_params']) && is_array($params['custom_params'])
+        $customparams = isset($params['custom_params']) && is_array($params['custom_params'])
             ? $params['custom_params']
             : [];
         return (new lti_manager())->create(
             (int)    $params['courseid'],
             (int)    $params['sectionnum'],
             (string) $params['name'],
-            $custom_params
+            $customparams
         );
     }
 
+    /**
+     * Update an existing LTI activity.
+     *
+     * @param array $params Must contain 'cmid'. Optional: 'name', 'visible', 'custom_params'.
+     * @return array Updated activity data.
+     * @throws \invalid_parameter_exception If cmid is missing.
+     */
     private function update_lti_activity(array $params): array {
         if (empty($params['cmid'])) {
             throw new \invalid_parameter_exception('Missing required param: cmid');
@@ -127,6 +169,13 @@ class api_handler {
         return (new lti_manager())->update((int) $params['cmid'], $updates);
     }
 
+    /**
+     * Delete an LTI activity by course module ID.
+     *
+     * @param array $params Must contain 'cmid'.
+     * @return array Success indicator.
+     * @throws \invalid_parameter_exception If cmid is missing.
+     */
     private function delete_lti_activity(array $params): array {
         if (empty($params['cmid'])) {
             throw new \invalid_parameter_exception('Missing required param: cmid');
@@ -134,6 +183,13 @@ class api_handler {
         return (new lti_manager())->delete((int) $params['cmid']);
     }
 
+    /**
+     * Update a course section's name, visibility, or summary.
+     *
+     * @param array $params Must contain 'sectionid'. Optional: 'name', 'visible', 'summary'.
+     * @return array Updated section data.
+     * @throws \invalid_parameter_exception If sectionid is missing or no updatable fields provided.
+     */
     private function update_section(array $params): array {
         global $DB;
         if (empty($params['sectionid'])) {
@@ -157,6 +213,14 @@ class api_handler {
         ];
     }
 
+    /**
+     * Delete a course section.
+     *
+     * @param array $params Must contain 'sectionid'. Optional: 'force' to delete non-empty sections.
+     * @return array Success indicator.
+     * @throws \invalid_parameter_exception If sectionid is missing.
+     * @throws \moodle_exception If the section cannot be deleted.
+     */
     private function delete_section(array $params): array {
         global $DB;
         if (empty($params['sectionid'])) {
@@ -169,12 +233,24 @@ class api_handler {
         $force       = !empty($params['force']);
 
         if (!course_delete_section($course, $sectioninfo, $force)) {
-            throw new \moodle_exception('cannotdeletesection', 'error', '', null,
-                'Section has content — pass force=true to delete anyway');
+            throw new \moodle_exception(
+                'cannotdeletesection',
+                'error',
+                '',
+                null,
+                'Section has content. Pass force=true to delete anyway.'
+            );
         }
         return ['success' => true];
     }
 
+    /**
+     * Create a new section in a course.
+     *
+     * @param array $params Must contain 'courseid'. Optional: 'position', 'name'.
+     * @return array Created section data.
+     * @throws \invalid_parameter_exception If courseid is missing.
+     */
     private function create_section(array $params): array {
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
