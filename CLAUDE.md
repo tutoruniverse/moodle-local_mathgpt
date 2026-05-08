@@ -39,10 +39,10 @@ POST /local/mathgpt/api.php
 
 ### Authentication
 
-- Bearer token in `Authorization` header
+- Token passed as `token` field in the JSON request body (not `Authorization` header — Apache strips that in many default configs)
 - Validated against `local_oauth2_access_token` table (Moodle's OAuth2 plugin)
-- Token owner becomes the active Moodle session user via `$USER = get_complete_user_data('id', $userid)`
-- Expired tokens return HTTP 401; missing tokens return HTTP 400
+- Token owner becomes the active Moodle session user via `\core\session\manager::set_user()`
+- Expired tokens return HTTP 401; missing/malformed body returns HTTP 400
 
 ### API Dispatcher (`classes/api_handler.php`)
 

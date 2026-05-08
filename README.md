@@ -26,20 +26,16 @@ After installation, go to **Site Administration → Plugins → Local plugins �
 
 ## Authentication
 
-Every API request must include a Bearer token in the `Authorization` header:
-
-```
-Authorization: Bearer <token>
-```
-
 Tokens are issued by the `local_oauth2` plugin. The token owner becomes the active Moodle user for the request and must have the `local/mathgpt:useapi` capability (granted to the Manager role by default).
+
+The token is passed in the JSON request body (not an `Authorization` header) because Apache strips that header before PHP sees it in many default configurations.
 
 ## API Reference
 
-Send a `POST` request to `/local/mathgpt/api.php` with a JSON body:
+Send a `POST` request to `/local/mathgpt/api.php` with a JSON body. Include `token` in every request:
 
 ```json
-{ "function": "<function_name>", "params": { ... } }
+{ "token": "<access_token>", "function": "<function_name>", "params": { ... } }
 ```
 
 Successful response:
