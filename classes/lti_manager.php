@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/course/modlib.php');
 require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->dirroot . '/mod/lti/locallib.php');
 
 /**
  * Manages LTI 1.3 activity creation, update, and deletion for local_mathgpt.
@@ -91,7 +92,7 @@ class lti_manager {
         // sends the correct target_link_uri during OIDC login initiation, rather than
         // falling back to the tool type's base URL which breaks the redirect_uri check.
         $config = lti_get_type_type_config($toolid);
-        $redirecturis = array_map('trim', explode("\n", $config->lti_redirectionuris));
+        $redirecturis = array_map('trim', explode("\n", $config->lti_redirectionuris ?? ''));
         $launchurl = $redirecturis[0] ?? '';
 
         $moduleinfo                             = new \stdClass();
