@@ -87,11 +87,19 @@ class lti_manager {
 
         get_course($courseid); // Throws dml_missing_record_exception if not found.
 
+        // Use the first registered redirect URI as the activity's tool URL so Moodle
+        // sends the correct target_link_uri during OIDC login initiation, rather than
+        // falling back to the tool type's base URL which breaks the redirect_uri check.
+        $config = lti_get_type_type_config($toolid);
+        $redirecturis = array_map('trim', explode("\n", $config->lti_redirectionuris));
+        $launchurl = $redirecturis[0] ?? '';
+
         $moduleinfo                             = new \stdClass();
         $moduleinfo->modulename                 = 'lti';
         $moduleinfo->course                     = $courseid;
         $moduleinfo->section                    = $sectionnum;
         $moduleinfo->typeid                     = $toolid;
+        $moduleinfo->toolurl                    = $launchurl;
         $moduleinfo->name                       = $name;
         $moduleinfo->instructorcustomparameters = $this->encode_custom_params($customparams);
         $moduleinfo->visible                    = 1;

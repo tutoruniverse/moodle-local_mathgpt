@@ -48,8 +48,6 @@ class api_handler {
      * @throws \invalid_parameter_exception For unknown function names.
      */
     public function dispatch(string $function, array $params): array {
-        require_capability('local/mathgpt:useapi', \context_system::instance());
-
         switch ($function) {
             case 'get_courses':
                 return $this->get_courses();

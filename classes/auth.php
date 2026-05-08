@@ -35,20 +35,6 @@ defined('MOODLE_INTERNAL') || die();
  */
 class auth {
     /**
-     * Extract the raw token string from an Authorization header value.
-     * Returns null if header is absent, uses a different scheme, or has no token.
-     *
-     * @param string $header The value of the Authorization header.
-     * @return string|null The raw token, or null if not a valid Bearer header.
-     */
-    public static function extract_bearer_token(string $header): ?string {
-        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $matches)) {
-            return $matches[1];
-        }
-        return null;
-    }
-
-    /**
      * Validate a Bearer token against local_oauth2's access token store.
      * Returns the associated Moodle user ID on success.
      *

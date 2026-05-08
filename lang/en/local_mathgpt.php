@@ -26,12 +26,11 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['insufficientcapabilities'] = 'Insufficient capabilities.';
 $string['invalidapitoken']         = 'Invalid or expired token.';
-$string['invalidrequestbody']      = 'Request body must be JSON with a "function" key.';
+$string['invalidrequestbody']      = 'Request body must be JSON with "token" and "function" keys.';
 $string['invalidtoken']            = 'Invalid access token.';
 $string['ltitoolid']               = 'LTI Tool ID';
 $string['ltitoolid_desc']          = 'The Moodle LTI 1.3 tool type ID for MathGPT activities.';
 $string['mathgpt:useapi']          = 'Use MathGPT API';
-$string['missingauthheader']       = 'Missing or malformed Authorization header.';
 $string['notoolid']                = 'LTI tool ID is not configured. Set it in Site administration → Plugins → Local plugins → MathGPT API.';
 $string['pluginname']              = 'MathGPT API';
 $string['privacy:metadata']        = 'The MathGPT API plugin does not store any personal data. It acts as a REST bridge that orchestrates Moodle-internal APIs; any personal data (including LTI custom parameters) is stored and managed by mod_lti.';

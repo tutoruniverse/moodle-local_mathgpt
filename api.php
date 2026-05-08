@@ -32,16 +32,17 @@ use local_mathgpt\api_handler;
 
 header('Content-Type: application/json');
 
-// 1. Extract Bearer token
-$authheader = $_SERVER['HTTP_AUTHORIZATION']
-    ?? (function_exists('apache_request_headers') ? (apache_request_headers()['Authorization'] ?? '') : '');
-$token = auth::extract_bearer_token($authheader);
-
-if ($token === null) {
-    http_response_code(401);
-    echo json_encode(['success' => false, 'error' => get_string('missingauthheader', 'local_mathgpt')]);
+// 1. Parse request body (token lives in the body for portability across server configs)
+$body = json_decode(file_get_contents('php://input'), true);
+if (!is_array($body) || !isset($body['function']) || empty($body['token'])) {
+    http_response_code(400);
+    echo json_encode(['success' => false, 'error' => get_string('invalidrequestbody', 'local_mathgpt')]);
     exit;
 }
+
+$token    = (string) $body['token'];
+$function = (string) $body['function'];
+$params   = is_array($body['params'] ?? null) ? $body['params'] : [];
 
 // 2. Validate token and bootstrap Moodle session as service account user
 try {
@@ -54,17 +55,6 @@ try {
 
 $PAGE->set_context(\context_system::instance());
 \core\session\manager::set_user(core_user::get_user($userid, '*', MUST_EXIST));
-
-// 3. Parse request body
-$body = json_decode(file_get_contents('php://input'), true);
-if (!is_array($body) || !isset($body['function'])) {
-    http_response_code(400);
-    echo json_encode(['success' => false, 'error' => get_string('invalidrequestbody', 'local_mathgpt')]);
-    exit;
-}
-
-$function = (string) $body['function'];
-$params   = is_array($body['params'] ?? null) ? $body['params'] : [];
 
 // 4. Dispatch
 try {
