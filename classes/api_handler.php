@@ -250,13 +250,7 @@ class api_handler {
         $force       = !empty($params['force']);
 
         if (!course_delete_section($course, $sectioninfo, $force)) {
-            throw new \moodle_exception(
-                'cannotdeletesection',
-                'error',
-                '',
-                null,
-                'Section has content. Pass force=true to delete anyway.'
-            );
+            throw new \moodle_exception('cannotdeletesection', 'local_mathgpt');
         }
         return ['success' => true];
     }

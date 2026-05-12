@@ -56,6 +56,9 @@ try {
 $PAGE->set_context(\context_system::instance());
 \core\session\manager::set_user(core_user::get_user($userid, '*', MUST_EXIST));
 
+// 3. Enforce capability.
+require_capability('local/mathgpt:useapi', \context_system::instance());
+
 // 4. Dispatch
 try {
     $data = (new api_handler())->dispatch($function, $params);

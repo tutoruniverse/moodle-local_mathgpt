@@ -31,6 +31,8 @@ use core_privacy\local\metadata\null_provider;
  *
  * @package   local_mathgpt
  * @category  privacy
+ * @copyright 2026 MathGPT <backend@gotitapp.co>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provider implements null_provider {
     /**

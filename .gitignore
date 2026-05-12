@@ -1,3 +1,4 @@
 .DS_Store
 plugin_bundle/*.*
 .claude/settings.local.json
+.gstack/
