@@ -73,18 +73,27 @@ class api_handler {
     /**
      * List all courses the current user is enrolled in.
      *
-     * @return array Course records with id, fullname, shortname, visible.
+     * @return array Course records with id, fullname, shortname, visible, startdate, enddate, timecreated, summary.
      */
     private function get_courses(): array {
         global $USER;
-        $courses = enrol_get_users_courses($USER->id, false, 'id,fullname,shortname,visible', 'fullname ASC');
+        $courses = enrol_get_users_courses(
+            $USER->id,
+            false,
+            'id,fullname,shortname,visible,startdate,enddate,timecreated,summary',
+            'fullname ASC'
+        );
         $result  = [];
         foreach ($courses as $course) {
             $result[] = [
-                'id'        => (int)$course->id,
-                'fullname'  => $course->fullname,
-                'shortname' => $course->shortname,
-                'visible'   => (int)$course->visible,
+                'id'          => (int)$course->id,
+                'fullname'    => $course->fullname,
+                'shortname'   => $course->shortname,
+                'visible'     => (int)$course->visible,
+                'startdate'   => (int)$course->startdate,
+                'enddate'     => (int)$course->enddate,
+                'timecreated' => (int)$course->timecreated,
+                'summary'     => $course->summary ?? '',
             ];
         }
         return $result;
@@ -109,6 +118,16 @@ class api_handler {
             $modules = [];
             foreach ($modinfo->sections[$sectioninfo->section] ?? [] as $cmid) {
                 $cm        = $modinfo->cms[$cmid];
+                // 1. Check if the module is marked for deletion (The "Ghost" fix)
+                if ($cm->deletioninprogress) {
+                    continue;
+                }
+
+                // 2. Check if the current user (token holder) can actually see it
+                // This handles group restrictions and 'hidden' settings properly
+                if (!$cm->uservisible) {
+                    continue;
+                }
                 $modules[] = [
                     'id'      => (int)$cm->id,
                     'modname' => $cm->modname,
