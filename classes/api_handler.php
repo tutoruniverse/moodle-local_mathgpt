@@ -107,38 +107,63 @@ class api_handler {
      * @throws \invalid_parameter_exception If courseid is missing.
      */
     private function get_course_contents(array $params): array {
+        global $DB;
+
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
         }
         $course  = get_course((int)$params['courseid']); // Throws dml_missing_record_exception if absent.
         $modinfo = get_fast_modinfo($course);
-        $result  = [];
 
+        // Batch-load custom params for all LTI activities in this course.
+        $ltiparams = [];
+        $rows = $DB->get_records_sql(
+            'SELECT cm.id AS cmid, l.instructorcustomparameters
+               FROM {course_modules} cm
+               JOIN {lti} l ON l.id = cm.instance
+              WHERE cm.course = :courseid',
+            ['courseid' => (int)$params['courseid']]
+        );
+        foreach ($rows as $row) {
+            $decoded = [];
+            foreach (explode("\n", $row->instructorcustomparameters ?? '') as $line) {
+                [$k, $v] = array_pad(explode('=', $line, 2), 2, '');
+                if (trim($k) !== '') {
+                    $decoded[trim($k)] = trim($v);
+                }
+            }
+            $ltiparams[(int)$row->cmid] = $decoded;
+        }
+
+        $result = [];
         foreach ($modinfo->get_section_info_all() as $sectioninfo) {
             $modules = [];
             foreach ($modinfo->sections[$sectioninfo->section] ?? [] as $cmid) {
-                $cm        = $modinfo->cms[$cmid];
+                $cm = $modinfo->cms[$cmid];
                 // 1. Check if the module is marked for deletion (The "Ghost" fix)
                 if ($cm->deletioninprogress) {
                     continue;
                 }
-
-                // 2. Check if the current user (token holder) can actually see it
-                // This handles group restrictions and 'hidden' settings properly
+                // 2. Check if the current user (token holder) can actually see it.
                 if (!$cm->uservisible) {
                     continue;
                 }
-                $modules[] = [
+                $module = [
                     'id'      => (int)$cm->id,
                     'modname' => $cm->modname,
                     'name'    => $cm->name,
                     'visible' => (int)$cm->visible,
                 ];
+                if ($cm->modname === 'lti' && !empty($ltiparams[(int)$cm->id])) {
+                    $module['custom_params'] = $ltiparams[(int)$cm->id];
+                }
+                $modules[] = $module;
             }
             $result[] = [
-                'id'      => (int)$sectioninfo->id,
-                'name'    => get_section_name($course, $sectioninfo),
-                'modules' => $modules,
+                'id'        => (int)$sectioninfo->id,
+                'name'      => get_section_name($course, $sectioninfo),
+                'modules'   => $modules,
+                'component' => isset($sectioninfo->component) ? (string)$sectioninfo->component : '',
             ];
         }
         return $result;
