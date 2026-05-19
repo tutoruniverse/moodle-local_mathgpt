@@ -24,8 +24,6 @@
 
 namespace local_mathgpt;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Bearer token authentication helpers for local_mathgpt.
  *
