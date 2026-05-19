@@ -58,7 +58,7 @@ Returns all courses except the site home.
 
 _No params._
 
-**Returns:** array of `{ id: int, fullname: string, shortname: string, visible: 0|1 }`
+**Returns:** array of `{ id: int, fullname: string, shortname: string, visible: 0|1, startdate: int, enddate: int, timecreated: int, summary: string }`
 
 ---
 
@@ -70,7 +70,9 @@ Returns all sections and their modules for a course.
 |---|---|---|---|
 | `courseid` | int | yes | Moodle course ID |
 
-**Returns:** array of `{ id: int, name: string, modules: [{ id: int, modname: string, name: string, visible: 0|1 }] }`
+**Returns:** array of `{ id: int, name: string, component: string, modules: [{ id: int, modname: string, name: string, visible: 0|1, custom_params?: object }] }`
+
+`custom_params` is only present on modules where `modname === "lti"` and custom parameters are set.
 
 ---
 

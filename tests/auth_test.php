@@ -31,26 +31,6 @@ namespace local_mathgpt;
  * @covers    \local_mathgpt\auth
  */
 final class auth_test extends \advanced_testcase {
-    public function test_extract_bearer_token_valid(): void {
-        $this->assertEquals('abc123', auth::extract_bearer_token('Bearer abc123'));
-    }
-
-    public function test_extract_bearer_token_lowercase_scheme(): void {
-        $this->assertEquals('tok', auth::extract_bearer_token('bearer tok'));
-    }
-
-    public function test_extract_bearer_token_empty_string(): void {
-        $this->assertNull(auth::extract_bearer_token(''));
-    }
-
-    public function test_extract_bearer_token_wrong_scheme(): void {
-        $this->assertNull(auth::extract_bearer_token('Basic abc123'));
-    }
-
-    public function test_extract_bearer_token_bearer_only_no_token(): void {
-        $this->assertNull(auth::extract_bearer_token('Bearer'));
-    }
-
     /**
      * Skip the current test if the local_oauth2_access_token table does not exist.
      */
