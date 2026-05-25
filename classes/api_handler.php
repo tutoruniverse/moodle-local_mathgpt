@@ -51,6 +51,8 @@ class api_handler {
         switch ($function) {
             case 'get_courses':
                 return $this->get_courses();
+            case 'get_course':
+                return $this->get_course($params);
             case 'get_course_contents':
                 return $this->get_course_contents($params);
             case 'create_lti_activity':
@@ -77,13 +79,17 @@ class api_handler {
      */
     private function get_courses(): array {
         global $USER;
-        $courses = enrol_get_users_courses(
+        $courses = get_user_capability_course(
+            'moodle/course:view',
             $USER->id,
-            false,
-            'id,fullname,shortname,visible,startdate,enddate,timecreated,summary',
+            true,
+            'fullname,shortname,visible,startdate,enddate,timecreated,summary',
             'fullname ASC'
         );
-        $result  = [];
+        if (!$courses) {
+            return [];
+        }
+        $result = [];
         foreach ($courses as $course) {
             $result[] = [
                 'id'          => (int)$course->id,
@@ -97,6 +103,30 @@ class api_handler {
             ];
         }
         return $result;
+    }
+
+    /**
+     * Return details for a single course by ID.
+     *
+     * @param array $params Must contain 'courseid'.
+     * @return array Course record with id, fullname, shortname, visible, startdate, enddate, timecreated, summary.
+     * @throws \invalid_parameter_exception If courseid is missing.
+     */
+    private function get_course(array $params): array {
+        if (empty($params['courseid'])) {
+            throw new \invalid_parameter_exception('Missing required param: courseid');
+        }
+        $course = get_course((int) $params['courseid']);
+        return [
+            'id'          => (int) $course->id,
+            'fullname'    => $course->fullname,
+            'shortname'   => $course->shortname,
+            'visible'     => (int) $course->visible,
+            'startdate'   => (int) $course->startdate,
+            'enddate'     => (int) $course->enddate,
+            'timecreated' => (int) $course->timecreated,
+            'summary'     => $course->summary ?? '',
+        ];
     }
 
     /**
