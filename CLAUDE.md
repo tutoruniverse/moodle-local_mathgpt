@@ -51,6 +51,7 @@ POST /local/mathgpt/api.php
 | Function | Description |
 |---|---|
 | `get_courses` | Lists all Moodle courses |
+| `get_course` | Returns a single course by ID; returns `null` if not found or not enrolled |
 | `get_course_contents` | Returns sections + modules for a course |
 | `create_lti_activity` | Creates an LTI 1.3 activity in a section |
 | `update_lti_activity` | Updates name, visibility, custom params |

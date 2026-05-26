@@ -62,6 +62,18 @@ _No params._
 
 ---
 
+#### `get_course`
+
+Returns a single course by ID. Returns `null` if the course does not exist or the token owner is not enrolled in it.
+
+| Param | Type | Required | Description |
+|---|---|---|---|
+| `courseid` | int | yes | Moodle course ID |
+
+**Returns:** `{ id: int, fullname: string, shortname: string, visible: 0|1, startdate: int, enddate: int, timecreated: int, summary: string }` or `null`
+
+---
+
 #### `get_course_contents`
 
 Returns all sections and their modules for a course.
