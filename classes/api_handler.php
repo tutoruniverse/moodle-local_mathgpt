@@ -47,7 +47,7 @@ class api_handler {
      * @return array Handler result.
      * @throws \invalid_parameter_exception For unknown function names.
      */
-    public function dispatch(string $function, array $params): array {
+    public function dispatch(string $function, array $params): ?array {
         switch ($function) {
             case 'get_courses':
                 return $this->get_courses();
@@ -79,16 +79,12 @@ class api_handler {
      */
     private function get_courses(): array {
         global $USER;
-        $courses = get_user_capability_course(
-            'moodle/course:view',
+        $courses = enrol_get_users_courses(
             $USER->id,
-            true,
-            'fullname,shortname,visible,startdate,enddate,timecreated,summary',
+            false,
+            'id,fullname,shortname,visible,startdate,enddate,timecreated,summary',
             'fullname ASC'
         );
-        if (!$courses) {
-            return [];
-        }
         $result = [];
         foreach ($courses as $course) {
             $result[] = [
@@ -112,11 +108,20 @@ class api_handler {
      * @return array Course record with id, fullname, shortname, visible, startdate, enddate, timecreated, summary.
      * @throws \invalid_parameter_exception If courseid is missing.
      */
-    private function get_course(array $params): array {
+    private function get_course(array $params): ?array {
+        global $USER;
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
         }
-        $course = get_course((int) $params['courseid']);
+        try {
+            $course = get_course((int) $params['courseid']);
+        } catch (\dml_missing_record_exception $e) {
+            return null;
+        }
+        $context = \context_course::instance($course->id);
+        if (!is_enrolled($context, $USER->id)) {
+            return null;
+        }
         return [
             'id'          => (int) $course->id,
             'fullname'    => $course->fullname,
