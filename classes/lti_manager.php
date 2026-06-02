@@ -141,16 +141,17 @@ class lti_manager {
     public function update(int $cmid, array $updates): array {
         global $DB;
 
-        $cm     = get_coursemodule_from_id('lti', $cmid, 0, false, MUST_EXIST);
-        $course = get_course($cm->course);
-        $lti    = $DB->get_record('lti', ['id' => $cm->instance], '*', MUST_EXIST);
+        $cm         = get_coursemodule_from_id('lti', $cmid, 0, false, MUST_EXIST);
+        $course     = get_course($cm->course);
+        $lti        = $DB->get_record('lti', ['id' => $cm->instance], '*', MUST_EXIST);
+        $sectionnum = (int) $DB->get_field('course_sections', 'section', ['id' => $cm->section], MUST_EXIST);
 
         $moduleinfo                             = new \stdClass();
         $moduleinfo->coursemodule               = $cmid;
         $moduleinfo->modulename                 = 'lti';
         $moduleinfo->course                     = (int) $cm->course;
         $moduleinfo->instance                   = (int) $cm->instance;
-        $moduleinfo->section                    = (int) $cm->sectionnum;
+        $moduleinfo->section                    = $sectionnum;
         $moduleinfo->typeid                     = (int) $lti->typeid;
         $moduleinfo->name                       = $updates['name'] ?? $lti->name;
         $moduleinfo->visible                    = isset($updates['visible'])
