@@ -42,6 +42,7 @@ POST /local/mathgpt/api.php
 - Token passed as `token` field in the JSON request body (not `Authorization` header — Apache strips that in many default configs)
 - Validated against `local_oauth2_access_token` table (Moodle's OAuth2 plugin)
 - Token owner becomes the active Moodle session user via `\core\session\manager::set_user()`
+- Capability `local/mathgpt:useapi` is enforced at system context — missing capability returns HTTP 403; granted by default to `user`, `manager`, and `editingteacher` archetypes (see `db/access.php`)
 - Expired tokens return HTTP 401; missing/malformed body returns HTTP 400
 
 ### API Dispatcher (`classes/api_handler.php`)
@@ -50,14 +51,14 @@ POST /local/mathgpt/api.php
 
 | Function | Description |
 |---|---|
-| `get_courses` | Lists all Moodle courses |
+| `get_courses` | Lists courses the token owner is enrolled in |
 | `get_course` | Returns a single course by ID; returns `null` if not found or not enrolled |
-| `get_course_contents` | Returns sections + modules for a course |
+| `get_course_contents` | Returns sections + modules for a course; filters invisible and deletion-in-progress modules; includes `custom_params` for LTI activities |
 | `create_lti_activity` | Creates an LTI 1.3 activity in a section |
 | `update_lti_activity` | Updates name, visibility, custom params |
 | `delete_lti_activity` | Removes an LTI activity |
 | `create_section` | Adds a section to a course |
-| `update_section` | Updates section name/summary |
+| `update_section` | Updates section name, visibility, or summary |
 | `delete_section` | Removes a section |
 
 ### LTI Manager (`classes/lti_manager.php`)
@@ -68,7 +69,7 @@ Wraps Moodle's `mod_lti` internals. The `ltitoolid` setting (configured in plugi
 
 - `course_modinfo` / `get_fast_modinfo()` — course structure traversal
 - `create_module()` / `update_module()` / `course_delete_modules()` — module CRUD
-- `course_create_sections()` / `update_section_visibility()` — section management
+- `course_create_section()` / `course_update_section()` / `course_delete_section()` — section management
 - `$DB->get_record()` / `$DB->update_record()` — direct DB access for LTI table
 
 ## Plugin Configuration
