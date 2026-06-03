@@ -113,8 +113,12 @@ class api_handler {
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
         }
+        $courseid = validate_param($params['courseid'], PARAM_INT);
+        if ($courseid <= 0) {
+            throw new \invalid_parameter_exception('courseid must be a positive integer');
+        }
         try {
-            $course = get_course((int) $params['courseid']);
+            $course = get_course($courseid);
         } catch (\dml_missing_record_exception $e) {
             return null;
         }
@@ -147,7 +151,11 @@ class api_handler {
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
         }
-        $course  = get_course((int)$params['courseid']); // Throws dml_missing_record_exception if absent.
+        $courseid = validate_param($params['courseid'], PARAM_INT);
+        if ($courseid <= 0) {
+            throw new \invalid_parameter_exception('courseid must be a positive integer');
+        }
+        $course  = get_course($courseid); // Throws dml_missing_record_exception if absent.
         $modinfo = get_fast_modinfo($course);
 
         // Batch-load custom params for all LTI activities in this course.
@@ -157,7 +165,7 @@ class api_handler {
                FROM {course_modules} cm
                JOIN {lti} l ON l.id = cm.instance
               WHERE cm.course = :courseid',
-            ['courseid' => (int)$params['courseid']]
+            ['courseid' => $courseid]
         );
         foreach ($rows as $row) {
             $decoded = [];
@@ -217,15 +225,26 @@ class api_handler {
                 throw new \invalid_parameter_exception("Missing required param: {$field}");
             }
         }
-        $customparams = isset($params['custom_params']) && is_array($params['custom_params'])
-            ? $params['custom_params']
-            : [];
-        return (new lti_manager())->create(
-            (int)    $params['courseid'],
-            (int)    $params['sectionnum'],
-            (string) $params['name'],
-            $customparams
-        );
+        $courseid   = validate_param($params['courseid'],   PARAM_INT);
+        $sectionnum = validate_param($params['sectionnum'], PARAM_INT);
+        $name       = clean_param(   $params['name'],       PARAM_TEXT);
+        if ($courseid <= 0) {
+            throw new \invalid_parameter_exception('courseid must be a positive integer');
+        }
+        if ($sectionnum < 0) {
+            throw new \invalid_parameter_exception('sectionnum must be a non-negative integer');
+        }
+        if ($name === '') {
+            throw new \invalid_parameter_exception('name cannot be empty');
+        }
+        $customparams = [];
+        if (isset($params['custom_params']) && is_array($params['custom_params'])) {
+            foreach ($params['custom_params'] as $k => $v) {
+                $cleankey = validate_param((string) $k, PARAM_ALPHANUMEXT);
+                $customparams[$cleankey] = clean_param((string) $v, PARAM_TEXT);
+            }
+        }
+        return (new lti_manager())->create($courseid, $sectionnum, $name, $customparams);
     }
 
     /**
@@ -239,11 +258,32 @@ class api_handler {
         if (empty($params['cmid'])) {
             throw new \invalid_parameter_exception('Missing required param: cmid');
         }
-        $updates = array_intersect_key($params, array_flip(['name', 'visible']));
-        if (isset($params['custom_params']) && is_array($params['custom_params'])) {
-            $updates['custom_params'] = $params['custom_params'];
+        $cmid = validate_param($params['cmid'], PARAM_INT);
+        if ($cmid <= 0) {
+            throw new \invalid_parameter_exception('cmid must be a positive integer');
         }
-        return (new lti_manager())->update((int) $params['cmid'], $updates);
+        $updates = [];
+        if (isset($params['name'])) {
+            $updates['name'] = clean_param($params['name'], PARAM_TEXT);
+            if ($updates['name'] === '') {
+                throw new \invalid_parameter_exception('name cannot be empty');
+            }
+        }
+        if (isset($params['visible'])) {
+            $visible = validate_param($params['visible'], PARAM_INT);
+            if ($visible !== 0 && $visible !== 1) {
+                throw new \invalid_parameter_exception('visible must be 0 or 1');
+            }
+            $updates['visible'] = $visible;
+        }
+        if (isset($params['custom_params']) && is_array($params['custom_params'])) {
+            $updates['custom_params'] = [];
+            foreach ($params['custom_params'] as $k => $v) {
+                $cleankey = validate_param((string) $k, PARAM_ALPHANUMEXT);
+                $updates['custom_params'][$cleankey] = clean_param((string) $v, PARAM_TEXT);
+            }
+        }
+        return (new lti_manager())->update($cmid, $updates);
     }
 
     /**
@@ -257,7 +297,11 @@ class api_handler {
         if (empty($params['cmid'])) {
             throw new \invalid_parameter_exception('Missing required param: cmid');
         }
-        return (new lti_manager())->delete((int) $params['cmid']);
+        $cmid = validate_param($params['cmid'], PARAM_INT);
+        if ($cmid <= 0) {
+            throw new \invalid_parameter_exception('cmid must be a positive integer');
+        }
+        return (new lti_manager())->delete($cmid);
     }
 
     /**
@@ -272,16 +316,33 @@ class api_handler {
         if (empty($params['sectionid'])) {
             throw new \invalid_parameter_exception('Missing required param: sectionid');
         }
-        $record  = $DB->get_record('course_sections', ['id' => (int) $params['sectionid']], '*', MUST_EXIST);
-        $course  = get_course($record->course);
-        $updates = array_intersect_key($params, array_flip(['name', 'visible', 'summary']));
+        $sectionid = validate_param($params['sectionid'], PARAM_INT);
+        if ($sectionid <= 0) {
+            throw new \invalid_parameter_exception('sectionid must be a positive integer');
+        }
+        $updates = [];
+        if (isset($params['name'])) {
+            $updates['name'] = clean_param($params['name'], PARAM_TEXT);
+        }
+        if (isset($params['visible'])) {
+            $visible = validate_param($params['visible'], PARAM_INT);
+            if ($visible !== 0 && $visible !== 1) {
+                throw new \invalid_parameter_exception('visible must be 0 or 1');
+            }
+            $updates['visible'] = $visible;
+        }
+        if (isset($params['summary'])) {
+            $updates['summary'] = clean_param($params['summary'], PARAM_CLEANHTML);
+        }
         if (empty($updates)) {
             throw new \invalid_parameter_exception('No updatable fields provided (name, visible, summary)');
         }
+        $record  = $DB->get_record('course_sections', ['id' => $sectionid], '*', MUST_EXIST);
+        $course  = get_course($record->course);
         course_update_section($course, $record, $updates);
 
         // Re-fetch to return current state.
-        $record = $DB->get_record('course_sections', ['id' => (int) $params['sectionid']], '*', MUST_EXIST);
+        $record = $DB->get_record('course_sections', ['id' => $sectionid], '*', MUST_EXIST);
         return [
             'id'      => (int) $record->id,
             'section' => (int) $record->section,
@@ -303,10 +364,14 @@ class api_handler {
         if (empty($params['sectionid'])) {
             throw new \invalid_parameter_exception('Missing required param: sectionid');
         }
-        $record      = $DB->get_record('course_sections', ['id' => (int) $params['sectionid']], '*', MUST_EXIST);
+        $sectionid = validate_param($params['sectionid'], PARAM_INT);
+        if ($sectionid <= 0) {
+            throw new \invalid_parameter_exception('sectionid must be a positive integer');
+        }
+        $record      = $DB->get_record('course_sections', ['id' => $sectionid], '*', MUST_EXIST);
         $course      = get_course($record->course);
         $modinfo     = get_fast_modinfo($course);
-        $sectioninfo = $modinfo->get_section_info_by_id((int) $params['sectionid'], MUST_EXIST);
+        $sectioninfo = $modinfo->get_section_info_by_id($sectionid, MUST_EXIST);
         $force       = !empty($params['force']);
 
         if (!course_delete_section($course, $sectioninfo, $force)) {
@@ -326,13 +391,26 @@ class api_handler {
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
         }
-        $course   = get_course((int) $params['courseid']);
-        $position = isset($params['position']) ? (int) $params['position'] : 0;
+        $courseid = validate_param($params['courseid'], PARAM_INT);
+        if ($courseid <= 0) {
+            throw new \invalid_parameter_exception('courseid must be a positive integer');
+        }
+        $course   = get_course($courseid);
+        $position = 0;
+        if (isset($params['position'])) {
+            $position = validate_param($params['position'], PARAM_INT);
+            if ($position < 0) {
+                throw new \invalid_parameter_exception('position must be a non-negative integer');
+            }
+        }
         $section  = course_create_section($course, $position);
 
         if (!empty($params['name'])) {
-            course_update_section($course, $section, ['name' => (string) $params['name']]);
-            $section->name = (string) $params['name'];
+            $name = clean_param($params['name'], PARAM_TEXT);
+            if ($name !== '') {
+                course_update_section($course, $section, ['name' => $name]);
+                $section->name = $name;
+            }
         }
 
         return [
