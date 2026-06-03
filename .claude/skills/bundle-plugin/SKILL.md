@@ -95,6 +95,13 @@ BASE_SHORTNAME="mathgpt"   # strip type prefix from the prod component
 find "$TMPDIR/$SHORTNAME" -name "*.php" \
   -exec sed -i '' "s|local/${BASE_SHORTNAME}:|local/${SHORTNAME}:|g" {} \;
 
+# Replace capability lang string keys: 'mathgpt:{cap}' → 'mathgpt_{env}:{cap}'
+# Moodle derives the display string key from the capability name by stripping the
+# type prefix (local/), so local/mathgpt_lab:useapi looks up 'mathgpt_lab:useapi'.
+# Anchored by the opening single quote to avoid touching unrelated strings.
+find "$TMPDIR/$SHORTNAME" -name "*.php" \
+  -exec sed -i '' "s/'${BASE_SHORTNAME}:/'${SHORTNAME}:/g" {} \;
+
 # Rename the lang file to match the new component name
 mv "$TMPDIR/$SHORTNAME/lang/en/local_mathgpt.php" \
    "$TMPDIR/$SHORTNAME/lang/en/${COMPONENT}.php"
@@ -125,3 +132,4 @@ The first column of paths must all start with `$SHORTNAME/`. If the top-level di
 | `lang/` directory empty | `lang/` only contains `.php` files, which are covered by `*.php` filter |
 | Wrong shortname | Strip only the `local_` prefix: `local_mathgpt_dev` → `mathgpt_dev` |
 | Bundling as prod for non-prod env | The zip dir name must match the installed plugin folder name in Moodle |
+| Capability string key not renamed | `db/access.php` capability `local/mathgpt_lab:useapi` needs lang key `'mathgpt_lab:useapi'` — add the `sed "s/'mathgpt:/'mathgpt_lab:/g"` step after the slash-form rewrite |

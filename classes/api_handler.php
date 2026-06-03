@@ -146,7 +146,7 @@ class api_handler {
      * @throws \invalid_parameter_exception If courseid is missing.
      */
     private function get_course_contents(array $params): array {
-        global $DB;
+        global $DB, $USER;
 
         if (empty($params['courseid'])) {
             throw new \invalid_parameter_exception('Missing required param: courseid');
@@ -156,6 +156,9 @@ class api_handler {
             throw new \invalid_parameter_exception('courseid must be a positive integer');
         }
         $course  = get_course($courseid); // Throws dml_missing_record_exception if absent.
+        if (!is_enrolled(\context_course::instance($courseid), $USER->id)) {
+            throw new \required_capability_exception(\context_course::instance($courseid), 'moodle/course:view', 'nopermissions', '');
+        }
         $modinfo = get_fast_modinfo($course);
 
         // Batch-load custom params for all LTI activities in this course.
@@ -237,6 +240,7 @@ class api_handler {
         if ($name === '') {
             throw new \invalid_parameter_exception('name cannot be empty');
         }
+        require_capability('moodle/course:manageactivities', \context_course::instance($courseid));
         $customparams = [];
         if (isset($params['custom_params']) && is_array($params['custom_params'])) {
             foreach ($params['custom_params'] as $k => $v) {
@@ -262,6 +266,7 @@ class api_handler {
         if ($cmid <= 0) {
             throw new \invalid_parameter_exception('cmid must be a positive integer');
         }
+        require_capability('moodle/course:manageactivities', \context_module::instance($cmid));
         $updates = [];
         if (isset($params['name'])) {
             $updates['name'] = clean_param($params['name'], PARAM_TEXT);
@@ -301,6 +306,7 @@ class api_handler {
         if ($cmid <= 0) {
             throw new \invalid_parameter_exception('cmid must be a positive integer');
         }
+        require_capability('moodle/course:manageactivities', \context_module::instance($cmid));
         return (new lti_manager())->delete($cmid);
     }
 
@@ -338,6 +344,7 @@ class api_handler {
             throw new \invalid_parameter_exception('No updatable fields provided (name, visible, summary)');
         }
         $record  = $DB->get_record('course_sections', ['id' => $sectionid], '*', MUST_EXIST);
+        require_capability('moodle/course:update', \context_course::instance($record->course));
         $course  = get_course($record->course);
         course_update_section($course, $record, $updates);
 
@@ -369,6 +376,7 @@ class api_handler {
             throw new \invalid_parameter_exception('sectionid must be a positive integer');
         }
         $record      = $DB->get_record('course_sections', ['id' => $sectionid], '*', MUST_EXIST);
+        require_capability('moodle/course:update', \context_course::instance($record->course));
         $course      = get_course($record->course);
         $modinfo     = get_fast_modinfo($course);
         $sectioninfo = $modinfo->get_section_info_by_id($sectionid, MUST_EXIST);
@@ -396,6 +404,7 @@ class api_handler {
             throw new \invalid_parameter_exception('courseid must be a positive integer');
         }
         $course   = get_course($courseid);
+        require_capability('moodle/course:update', \context_course::instance($courseid));
         $position = 0;
         if (isset($params['position'])) {
             $position = validate_param($params['position'], PARAM_INT);

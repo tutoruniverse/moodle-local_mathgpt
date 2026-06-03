@@ -24,23 +24,37 @@
 
 namespace local_mathgpt\privacy;
 
-use core_privacy\local\metadata\null_provider;
+use core_privacy\local\metadata\collection;
+use core_privacy\local\metadata\provider as metadata_provider;
 
 /**
  * Privacy provider for local_mathgpt.
+ *
+ * This plugin stores no data of its own, but forwards caller-supplied custom
+ * parameters (which may include PII) to the configured LTI 1.3 external tool
+ * via mod_lti. That external data flow is declared below.
  *
  * @package   local_mathgpt
  * @category  privacy
  * @copyright 2026 MathGPT <backend@gotitapp.co>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements null_provider {
+class provider implements metadata_provider {
     /**
-     * Return the language string identifier describing why no data is stored.
+     * Describe all data sent to external systems by this plugin.
      *
-     * @return string Language string identifier.
+     * @param collection $collection Metadata collection to populate.
+     * @return collection Updated collection.
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_external_location_link(
+            'lti_tool',
+            [
+                'name'          => 'privacy:metadata:lti_tool:name',
+                'custom_params' => 'privacy:metadata:lti_tool:custom_params',
+            ],
+            'privacy:metadata:lti_tool'
+        );
+        return $collection;
     }
 }

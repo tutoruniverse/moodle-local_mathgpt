@@ -26,7 +26,7 @@ After installation, go to **Site Administration → Plugins → Local plugins �
 
 ## Authentication
 
-Tokens are issued by the `local_oauth2` plugin. The token owner becomes the active Moodle user for the request and must have the `local/mathgpt:useapi` capability (granted to the Manager role by default).
+Tokens are issued by the `local_oauth2` plugin. The token owner becomes the active Moodle user for the request and must have the `local/mathgpt:useapi` capability (granted to the Manager and Editing Teacher roles by default).
 
 The token is passed in the JSON request body (not an `Authorization` header) because Apache strips that header before PHP sees it in many default configurations.
 
@@ -183,6 +183,14 @@ Removes a section. Fails if the section contains modules unless `force` is set.
 | `force` | bool | no | Pass `true` to delete even if the section contains activities (default `false`) |
 
 **Returns:** `{ success: true }`
+
+## Security notes
+
+This plugin is a stateless REST API. Two Moodle security mechanisms that apply to HTML form submissions are intentionally absent:
+
+**`require_login()`** — This function validates a session cookie. This endpoint has no session (`NO_MOODLE_COOKIES` is defined). The Bearer token in the request body serves the same purpose: it identifies and authenticates the caller. This is the same pattern used by Moodle's own web service layer (`webservice/lib.php`).
+
+**`sesskey`** — This is a session-bound CSRF token. CSRF is not a threat for token-authenticated REST APIs: a cross-origin request cannot include the Bearer token because it is not stored in a cookie that the browser attaches automatically. Requiring sesskey would also break all legitimate API clients, since no session exists to generate one from.
 
 ## Running Tests
 

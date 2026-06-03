@@ -54,15 +54,16 @@ try {
 }
 
 $PAGE->set_context(\context_system::instance());
-// Skipping require_login(): stateless Bearer-token REST endpoint.
-// set_user() establishes the Moodle user context directly, the same way the external service
-// layer (webservice/lib.php) authenticates token-based requests without a session login.
+// require_login() and sesskey are intentionally omitted.
+// This is a stateless Bearer-token REST endpoint (same pattern as Moodle's own webservice layer):
+// - require_login() relies on a session cookie; none exists for token-based requests.
+// - sesskey is a session-bound CSRF token; it cannot exist without a session and is unnecessary
+//   here because the Bearer token already proves request authenticity.
+// set_user() establishes the Moodle user context directly, matching how webservice/lib.php
+// authenticates token-based requests.
 \core\session\manager::set_user(core_user::get_user($userid, '*', MUST_EXIST));
 
-// 3. Enforce capability.
-require_capability('local/mathgpt:useapi', \context_system::instance());
-
-// 4. Dispatch
+// 3. Dispatch
 try {
     $data = (new api_handler())->dispatch($function, $params);
     echo json_encode(['success' => true, 'data' => $data]);
@@ -77,5 +78,5 @@ try {
     echo json_encode(['success' => false, 'error' => get_string('insufficientcapabilities', 'local_mathgpt')]);
 } catch (\moodle_exception $e) {
     http_response_code(500);
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    echo json_encode(['success' => false, 'error' => get_string('unexpectederror', 'local_mathgpt')]);
 }

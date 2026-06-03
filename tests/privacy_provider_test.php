@@ -31,19 +31,23 @@ namespace local_mathgpt;
  * @covers    \local_mathgpt\privacy\provider
  */
 final class privacy_provider_test extends \advanced_testcase {
-    public function test_provider_implements_null_provider(): void {
+    public function test_provider_implements_metadata_provider(): void {
         $this->assertTrue(
-            is_a(\local_mathgpt\privacy\provider::class, \core_privacy\local\metadata\null_provider::class, true),
-            'provider must implement null_provider interface'
+            is_a(\local_mathgpt\privacy\provider::class, \core_privacy\local\metadata\provider::class, true),
+            'provider must implement metadata\provider interface'
         );
     }
 
-    public function test_get_reason_returns_non_empty_string(): void {
-        $reason = \local_mathgpt\privacy\provider::get_reason();
-        $this->assertIsString($reason);
-        $this->assertNotEmpty($reason);
-        // Verify the key actually resolves in the lang system (missing key returns '[[key]]').
-        $resolved = get_string($reason, 'local_mathgpt');
-        $this->assertStringNotContainsString('[[', $resolved);
+    public function test_get_metadata_declares_lti_tool_link(): void {
+        $collection = new \core_privacy\local\metadata\collection('local_mathgpt');
+        $result = \local_mathgpt\privacy\provider::get_metadata($collection);
+
+        $this->assertInstanceOf(\core_privacy\local\metadata\collection::class, $result);
+
+        $items = $result->get_collection();
+        $this->assertNotEmpty($items, 'metadata collection must not be empty');
+
+        $names = array_map(fn($item) => $item->get_name(), $items);
+        $this->assertContains('lti_tool', $names, 'collection must declare the lti_tool external link');
     }
 }

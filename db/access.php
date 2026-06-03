@@ -30,7 +30,6 @@ $capabilities = [
         'captype'      => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes'   => [
-            'user'           => CAP_ALLOW,
             'manager'        => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
         ],
